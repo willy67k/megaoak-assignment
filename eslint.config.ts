@@ -7,10 +7,8 @@ import prettier from "eslint-config-prettier";
 import globals from "globals";
 
 export default [
-  // JS 基本規則
   js.configs.recommended,
 
-  // Vue + TS
   {
     files: ["**/*.vue", "**/*.ts", "**/*.js"],
     languageOptions: {
@@ -51,6 +49,5 @@ export default [
     ignores: ["node_modules", "dist"],
   },
 
-  // ⭐ 關鍵：放最後，關掉所有 format 規則
   prettier,
 ];
