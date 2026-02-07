@@ -1,7 +1,7 @@
 import type { Config } from "stylelint";
 
 const config: Config = {
-  extends: ["stylelint-config-recommended-vue"],
+  extends: ["stylelint-config-standard-scss"],
 
   plugins: ["stylelint-order"],
 
