@@ -11,6 +11,16 @@ const wrapperRef = useTemplateRef("wrapperRef");
 const inputRef = useTemplateRef("inputRef");
 const containerHeight = ref(0);
 
+const virtualizer = useVirtualizer({
+  count: filteredPoints.value.length,
+  getScrollElement: () => containerRef.value,
+  estimateSize: () => 80,
+});
+
+watch(filteredPoints, (newList) => {
+  virtualizer.value.setOptions({ ...virtualizer.value.options, count: newList.length });
+});
+
 function updateContainerHeight() {
   const mapEl = document.getElementById("map");
   const inputEl = inputRef.value;
@@ -29,16 +39,6 @@ function updateContainerHeight() {
 
   containerHeight.value = height > 0 ? height : 100;
 }
-
-const virtualizer = useVirtualizer({
-  count: filteredPoints.value.length,
-  getScrollElement: () => containerRef.value,
-  estimateSize: () => 80,
-});
-
-watch(filteredPoints, (newList) => {
-  virtualizer.value.setOptions({ ...virtualizer.value.options, count: newList.length });
-});
 
 onMounted(() => {
   nextTick(() => {

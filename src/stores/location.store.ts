@@ -120,10 +120,12 @@ export const useLocationStore = defineStore("location", {
     },
 
     getFilteredRenewalPoints(searchText: string) {
-      if (!searchText) return this.renewalPoints;
-
-      const lower = searchText.toLowerCase();
-      return this.renewalPoints.filter((p) => p.name.toLowerCase().includes(lower) || p.id.toString() === searchText);
+      const list = !searchText ? this.renewalPoints : this.renewalPoints.filter((p) => p.name.toLowerCase().includes(searchText.toLowerCase()) || p.id.toString() === searchText);
+      const groups: Record<string, RenewalPointVM> = {};
+      list.forEach((point) => {
+        if (!groups[point.name]) groups[point.name] = point;
+      });
+      return Object.values(groups);
     },
   },
 });
