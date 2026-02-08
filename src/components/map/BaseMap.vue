@@ -10,6 +10,10 @@ const store = useLocationStore();
 const map = ref<Map>();
 const filterText = ref("");
 
+useUserMarker(map as Ref<Map>);
+useRenewalMarker(map as Ref<Map>, filterText);
+usePolygonLayer(map as Ref<Map>);
+
 watch(
   () => store.userLocation,
   () => {
@@ -28,9 +32,6 @@ onMounted(() => {
     zoom: 16,
     maxZoom: 18,
   });
-  useUserMarker(map as Ref<Map>);
-  useRenewalMarker(map as Ref<Map>, filterText);
-  usePolygonLayer(map as Ref<Map>);
 });
 </script>
 

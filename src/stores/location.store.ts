@@ -68,7 +68,7 @@ export const useLocationStore = defineStore("location", {
   }),
 
   actions: {
-    async setUserLocation(lat: number, lng: number) {
+    setUserLocation(lat: number, lng: number) {
       this.userLocation = { lat, lng };
     },
 
@@ -106,12 +106,6 @@ export const useLocationStore = defineStore("location", {
       } finally {
         this.polygonsLoading = false;
       }
-    },
-
-    async initMapData(lat: number, lng: number) {
-      await this.setUserLocation(lat, lng);
-      await this.fetchRenewalList();
-      await this.fetchPolygons();
     },
 
     getFilteredRenewalPointVMs(searchText: string) {

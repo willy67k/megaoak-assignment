@@ -9,7 +9,7 @@ const store = useLocationStore();
 onMounted(() => {
   navigator.geolocation.getCurrentPosition(
     async (pos) => {
-      await store.setUserLocation(pos.coords.latitude, pos.coords.longitude);
+      store.setUserLocation(pos.coords.latitude, pos.coords.longitude);
       await store.fetchRenewalList();
       await store.fetchPolygons();
     },

@@ -1,4 +1,4 @@
-import { watch, onMounted, ref, type Ref } from "vue";
+import { watch, ref, type Ref } from "vue";
 import L, { Map, GeoJSON } from "leaflet";
 import { useLocationStore } from "@/stores/location.store";
 
@@ -22,17 +22,11 @@ export function usePolygonLayer(map: Ref<Map>) {
           fillOpacity: 0.2,
         },
         onEachFeature: (feature, layer) => {
-          const name = feature.properties?.TxtMemo || feature.properties?.分區 || "Polygon";
+          const name = feature.properties?.TxtMemo || feature.properties?.分區;
           layer.bindTooltip(name, { sticky: true });
         },
       }).addTo(map.value);
     },
     { immediate: true, deep: true }
   );
-
-  onMounted(() => {
-    if (!geoJsonLayerRef.value && map.value) {
-      geoJsonLayerRef.value = L.geoJSON().addTo(map.value);
-    }
-  });
 }
