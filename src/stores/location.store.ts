@@ -26,7 +26,7 @@ export interface RenewalPoint {
 
 export interface RenewalPointVM {
   id: number;
-  name: string;
+  stopName: string;
   lat: number;
   lng: number;
   distance: number;
@@ -59,7 +59,7 @@ export const useLocationStore = defineStore("location", {
   state: () => ({
     userLocation: null as LatLng | null,
     renewalResponse: { result: [], tod: false } as RenewalPointResponse,
-    renewalPoints: [] as RenewalPointVM[],
+    renewalPointVMs: [] as RenewalPointVM[],
     polygonsResponse: {} as PolygonsResponse,
     renewalLoading: false,
     renewalError: null as string | null,
@@ -81,7 +81,7 @@ export const useLocationStore = defineStore("location", {
         const data = await getDistanceList(this.userLocation);
         this.renewalResponse = data;
 
-        this.renewalPoints = data.result.map((item: RenewalPoint) => ({
+        this.renewalPointVMs = data.result.map((item: RenewalPoint) => ({
           id: item.id,
           name: item.stop_name,
           lat: item.latitude,
@@ -114,11 +114,11 @@ export const useLocationStore = defineStore("location", {
       await this.fetchPolygons();
     },
 
-    getFilteredRenewalPoints(searchText: string) {
-      const list = !searchText ? this.renewalPoints : this.renewalPoints.filter((p) => p.name.toLowerCase().includes(searchText.toLowerCase()) || p.id.toString() === searchText);
+    getFilteredRenewalPointVMs(searchText: string) {
+      const list = !searchText ? this.renewalPointVMs : this.renewalPointVMs.filter((point) => point.stopName.toLowerCase().includes(searchText.toLowerCase()));
       const groups: Record<string, RenewalPointVM> = {};
       list.forEach((point) => {
-        if (!groups[point.name]) groups[point.name] = point;
+        if (!groups[point.stopName]) groups[point.stopName] = point;
       });
       return Object.values(groups);
     },

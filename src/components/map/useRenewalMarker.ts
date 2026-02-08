@@ -9,11 +9,11 @@ export function useRenewalMarker(mapRef: Ref<Map | null>, filterText?: Ref<strin
 
   function getGroupedPoints(): Record<string, RenewalPointVM[]> {
     const groups: Record<string, RenewalPointVM[]> = {};
-    const list = store.renewalPoints.filter((point) => (filterText?.value ? point.name.toLowerCase().includes(filterText.value.toLowerCase()) : true));
+    const list = store.renewalPointVMs.filter((point) => (filterText?.value ? point.stopName.toLowerCase().includes(filterText.value.toLowerCase()) : true));
 
     list.forEach((point) => {
-      if (!groups[point.name]) groups[point.name] = [];
-      groups[point.name]!.push(point);
+      if (!groups[point.stopName]) groups[point.stopName] = [];
+      groups[point.stopName]!.push(point);
     });
 
     return groups;
@@ -47,7 +47,7 @@ export function useRenewalMarker(mapRef: Ref<Map | null>, filterText?: Ref<strin
     }
   }
 
-  watch([() => store.renewalPoints.length, filterText], () => render(), { immediate: true });
+  watch([() => store.renewalPointVMs.length, filterText], () => render(), { immediate: true });
 
   onBeforeUnmount(() => {
     if (markerClusterGroup.value && mapRef.value) {

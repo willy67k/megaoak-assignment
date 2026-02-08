@@ -5,7 +5,7 @@ import { useVirtualizer } from "@tanstack/vue-virtual";
 
 const store = useLocationStore();
 const searchText = ref("");
-const filteredPoints = computed(() => store.getFilteredRenewalPoints(searchText.value));
+const filteredPoints = computed(() => store.getFilteredRenewalPointVMs(searchText.value));
 const containerRef = useTemplateRef("containerRef");
 const wrapperRef = useTemplateRef("wrapperRef");
 const inputRef = useTemplateRef("inputRef");
