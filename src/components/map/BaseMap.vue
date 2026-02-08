@@ -9,6 +9,7 @@ import { usePolygonLayer } from "./usePolygonLayer";
 const store = useLocationStore();
 const map = ref<Map>();
 const filterText = ref("");
+const emit = defineEmits(["updateMapRef"]);
 
 useUserMarker(map as Ref<Map>);
 useRenewalMarker(map as Ref<Map>, filterText);
@@ -32,6 +33,7 @@ onMounted(() => {
     zoom: 16,
     maxZoom: 18,
   });
+  emit("updateMapRef", map);
 });
 </script>
 

@@ -1,10 +1,15 @@
 <script setup lang="ts">
-import { onMounted } from "vue";
+import { onMounted, ref } from "vue";
 import { useLocationStore } from "@/stores/location.store";
 import BaseMap from "@/components/map/BaseMap.vue";
 import RenewalList from "@/components/list/RenewalList.vue";
 
 const store = useLocationStore();
+const mapRef = ref<any>(null);
+
+function handleMapRef(refVal: any) {
+  mapRef.value = refVal;
+}
 
 onMounted(() => {
   navigator.geolocation.getCurrentPosition(
@@ -22,7 +27,7 @@ onMounted(() => {
 
 <template>
   <div class="layout">
-    <BaseMap />
-    <RenewalList />
+    <BaseMap @updateMapRef="handleMapRef" />
+    <RenewalList :mapRef="mapRef" />/>
   </div>
 </template>
