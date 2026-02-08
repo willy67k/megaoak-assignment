@@ -44,8 +44,8 @@ function updateContainerHeight() {
   containerHeight.value = height > 0 ? height : 100;
 }
 
-function goToPoint(point: RenewalPointVM) {
-  props.mapRef?.value.setView([point.lat, point.lng]);
+function flyToPoint(point: RenewalPointVM) {
+  props.mapRef?.value.flyTo([point.lat, point.lng]);
 }
 
 onMounted(() => {
@@ -81,7 +81,7 @@ onUnmounted(() => {
             width: '100%',
           }"
         >
-          <li class="flex cursor-pointer items-center justify-between bg-white px-4 py-4" @click="() => goToPoint(filteredPoints[virtualRow.index]!)">
+          <li class="flex cursor-pointer items-center justify-between bg-white px-4 py-4" @click="() => flyToPoint(filteredPoints[virtualRow.index]!)">
             <p class="text-xl font-bold text-gray-800">{{ filteredPoints[virtualRow.index]!.stopName }}</p>
             <p class="text font-bold text-blue-700/60">
               <span class="mr-2 text-3xl">{{ filteredPoints[virtualRow.index]!.distance.toFixed(1) }}</span>
