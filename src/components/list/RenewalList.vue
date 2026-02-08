@@ -74,7 +74,7 @@ onUnmounted(() => {
           }"
         >
           <li class="flex items-center justify-between bg-white px-4 py-4">
-            <p class="text-xl font-bold text-gray-800">{{ filteredPoints[virtualRow.index]!.name }}</p>
+            <p class="text-xl font-bold text-gray-800">{{ filteredPoints[virtualRow.index]!.stopName }}</p>
             <p class="text font-bold text-blue-700/60">
               <span class="mr-2 text-3xl">{{ filteredPoints[virtualRow.index]!.distance.toFixed(1) }}</span>
               <span class="text-base">km</span>

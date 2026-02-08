@@ -83,7 +83,7 @@ export const useLocationStore = defineStore("location", {
 
         this.renewalPointVMs = data.result.map((item: RenewalPoint) => ({
           id: item.id,
-          name: item.stop_name,
+          stopName: item.stop_name,
           lat: item.latitude,
           lng: item.longitude,
           distance: item.distance,
