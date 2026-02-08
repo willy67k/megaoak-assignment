@@ -1,6 +1,7 @@
 import { defineStore } from "pinia";
 import { getDistanceList } from "@/api/xinbei.distance";
 import { getPolygons } from "@/api/xinbei.polygon";
+import type { Feature, FeatureCollection } from "geojson";
 
 export interface LatLng {
   lat: number;
@@ -23,33 +24,6 @@ export interface RenewalPoint {
   stop_name: string;
 }
 
-export interface PolygonsResponse {
-  result: {
-    crs: {
-      properties: {
-        name: string;
-      };
-      type: string;
-    };
-    features: PolygonsFeature[];
-    name: string;
-    type: string;
-  };
-}
-
-export interface PolygonsFeature {
-  geometry: {
-    coordinates: number[][][];
-    type: "Polygon";
-  };
-  properties: {
-    SHAPE_Area: number;
-    TxtMemo: string;
-    分區: string;
-  };
-  type: string;
-}
-
 export interface RenewalPointVM {
   id: number;
   name: string;
@@ -58,13 +32,35 @@ export interface RenewalPointVM {
   distance: number;
 }
 
+export interface PolygonsResponse {
+  result: PolygonsResult;
+}
+
+export interface PolygonsResult extends FeatureCollection {
+  crs: {
+    properties: {
+      name: string;
+    };
+    type: string;
+  };
+  name: string;
+  features: PolygonsFeature[];
+}
+
+export interface PolygonsFeature extends Feature {
+  properties: {
+    SHAPE_Area: number;
+    TxtMemo: string;
+    分區: string;
+  };
+}
+
 export const useLocationStore = defineStore("location", {
   state: () => ({
     userLocation: null as LatLng | null,
     renewalResponse: { result: [], tod: false } as RenewalPointResponse,
     renewalPoints: [] as RenewalPointVM[],
     polygonsResponse: {} as PolygonsResponse,
-    polygonFeatures: [] as PolygonsFeature[],
     renewalLoading: false,
     renewalError: null as string | null,
     polygonsLoading: false,
@@ -105,7 +101,6 @@ export const useLocationStore = defineStore("location", {
       try {
         const data = await getPolygons("tucheng.json");
         this.polygonsResponse = data;
-        this.polygonFeatures = data.result.features;
       } catch (err) {
         this.polygonsError = "Failed to fetch polygons";
       } finally {

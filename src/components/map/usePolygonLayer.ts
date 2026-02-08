@@ -1,38 +1,21 @@
-import { watch, onMounted, type Ref } from "vue";
+import { watch, onMounted, ref, type Ref } from "vue";
 import L, { Map, GeoJSON } from "leaflet";
-import { useLocationStore, type PolygonsFeature } from "@/stores/location.store";
-import type { Feature, FeatureCollection, Geometry } from "geojson";
+import { useLocationStore } from "@/stores/location.store";
 
 export function usePolygonLayer(map: Ref<Map>) {
   const store = useLocationStore();
-
-  let geoJsonLayer: GeoJSON | null = null;
-
-  function getGeoJSON(): FeatureCollection {
-    const features: Feature<Geometry>[] = store.polygonFeatures.map((f: PolygonsFeature) => ({
-      type: "Feature",
-      geometry: {
-        type: f.geometry.type,
-        coordinates: f.geometry.coordinates,
-      },
-      properties: f.properties,
-    }));
-
-    return {
-      type: "FeatureCollection",
-      features,
-    };
-  }
+  const geoJsonLayerRef: Ref<GeoJSON | null> = ref(null);
 
   watch(
-    () => store.polygonFeatures,
-    (features) => {
+    () => store.polygonsResponse,
+    (response) => {
+      const features = response?.result?.features;
       if (!map.value || !features || features.length === 0) return;
 
-      if (geoJsonLayer) {
-        geoJsonLayer.remove();
+      if (geoJsonLayerRef.value) {
+        geoJsonLayerRef.value.remove();
       }
-      geoJsonLayer = L.geoJSON(getGeoJSON(), {
+      geoJsonLayerRef.value = L.geoJSON(store.polygonsResponse.result, {
         style: {
           color: "#2AD8A2",
           weight: 2,
@@ -44,12 +27,12 @@ export function usePolygonLayer(map: Ref<Map>) {
         },
       }).addTo(map.value);
     },
-    { immediate: true }
+    { immediate: true, deep: true }
   );
 
   onMounted(() => {
-    if (!geoJsonLayer && map.value) {
-      geoJsonLayer = L.geoJSON().addTo(map.value);
+    if (!geoJsonLayerRef.value && map.value) {
+      geoJsonLayerRef.value = L.geoJSON().addTo(map.value);
     }
   });
 }
