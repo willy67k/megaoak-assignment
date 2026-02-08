@@ -1,5 +1,6 @@
 import { onMounted } from "vue";
 import { useAuthStore } from "@/stores/auth.store";
+import { jwtDecode } from "jwt-decode";
 
 declare global {
   interface Window {
@@ -7,26 +8,18 @@ declare global {
   }
 }
 
+export interface JwtGooglePayload {
+  sub: string;
+  name: string;
+  email: string;
+  picture: string;
+}
+
 export function useGoogleAuth() {
   const authStore = useAuthStore();
 
-  function decodeJwt(token: string) {
-    const base64Url = token.split(".")[1];
-    if (!base64Url) return;
-
-    const base64 = base64Url.replace(/-/g, "+").replace(/_/g, "/");
-    return JSON.parse(
-      decodeURIComponent(
-        atob(base64)
-          .split("")
-          .map((c) => "%" + ("00" + c.charCodeAt(0).toString(16)).slice(-2))
-          .join("")
-      )
-    );
-  }
-
   function handleCredentialResponse(response: any) {
-    const payload = decodeJwt(response.credential);
+    const payload: JwtGooglePayload = jwtDecode(response.credential);
 
     if (!payload) return;
 
@@ -42,7 +35,7 @@ export function useGoogleAuth() {
     if (!window.google) return;
 
     window.google.accounts.id.initialize({
-      client_id: "567448751226-h01v27amboln38il8t01v9dl07hiildu.apps.googleusercontent.com",
+      client_id: import.meta.env.VITE_GOOGLE_CLIENT_ID,
       callback: handleCredentialResponse,
     });
 
@@ -53,7 +46,7 @@ export function useGoogleAuth() {
 
   onMounted(() => {
     const script = document.createElement("script");
-    script.src = "https://accounts.google.com/gsi/client";
+    script.src = import.meta.env.VITE_GOOGLE_SOURCE;
     script.async = true;
     script.defer = true;
     script.onload = initGoogle;

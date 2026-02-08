@@ -17,7 +17,7 @@ export function useFacebookAuth() {
   function initFacebook() {
     window.fbAsyncInit = function () {
       window.FB.init({
-        appId: "1642334463870652",
+        appId: import.meta.env.VITE_FACEBOOK_APP_ID,
         cookie: true,
         xfbml: true,
         version: "v18.0",
@@ -27,7 +27,7 @@ export function useFacebookAuth() {
     };
 
     const script = document.createElement("script");
-    script.src = "https://connect.facebook.net/zh_TW/sdk.js";
+    script.src = import.meta.env.VITE_FACEBOOK_SOURCE;
     script.async = true;
     script.defer = true;
     document.head.appendChild(script);

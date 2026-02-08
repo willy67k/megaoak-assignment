@@ -99,7 +99,7 @@ export const useLocationStore = defineStore("location", {
       this.polygonsLoading = true;
       this.polygonsError = null;
       try {
-        const data = await getPolygons("tucheng.json");
+        const data = await getPolygons(import.meta.env.VITE_POLYGON_DIRECTORY);
         this.polygonsResponse = data;
       } catch (err) {
         this.polygonsError = "Failed to fetch polygons";

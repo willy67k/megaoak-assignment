@@ -40,3 +40,7 @@ __screenshots__/
 
 # Pem
 *.pem
+
+# ENV
+.env*
+!.env
