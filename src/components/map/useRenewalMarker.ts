@@ -1,11 +1,12 @@
 import { ref, watch, onBeforeUnmount, nextTick, type Ref } from "vue";
-import L, { Map, MarkerClusterGroup } from "leaflet";
+import L, { type Map, Marker, MarkerClusterGroup, Popup } from "leaflet";
 import "leaflet.markercluster";
 import { useLocationStore, type RenewalPointVM } from "@/stores/location.store";
 
 export function useRenewalMarker(mapRef: Ref<Map | null>, filterText?: Ref<string>) {
   const store = useLocationStore();
   const markerClusterGroup = ref<MarkerClusterGroup | null>(null);
+  let currentPopup: { popup: Popup; marker: Marker } | null = null;
 
   function getGroupedPoints(): Record<string, RenewalPointVM[]> {
     const groups: Record<string, RenewalPointVM[]> = {};
@@ -24,14 +25,17 @@ export function useRenewalMarker(mapRef: Ref<Map | null>, filterText?: Ref<strin
 
     await nextTick();
 
-    if (!markerClusterGroup.value) {
-      markerClusterGroup.value = L.markerClusterGroup();
-      mapRef.value.addLayer(markerClusterGroup.value as MarkerClusterGroup);
-    } else {
+    if (markerClusterGroup.value) {
+      markerClusterGroup.value.off("popupopen");
+      markerClusterGroup.value.off("popupclose");
       markerClusterGroup.value.clearLayers();
+    } else {
+      markerClusterGroup.value = new MarkerClusterGroup();
+      mapRef.value.addLayer(markerClusterGroup.value as MarkerClusterGroup);
     }
 
     const grouped = getGroupedPoints();
+    const markers: Marker[] = [];
 
     for (const name in grouped) {
       const points = grouped[name];
@@ -40,17 +44,65 @@ export function useRenewalMarker(mapRef: Ref<Map | null>, filterText?: Ref<strin
       const { lat, lng } = points[0]!;
       const marker = L.marker([lat, lng]);
 
-      const popupHtml = `<strong>${name}</strong><br/>距離: ${points[0]!.distance.toFixed(1)} km`;
-      marker.bindPopup(popupHtml);
+      const popup = L.popup({
+        autoClose: true,
+        closeOnClick: true,
+        autoPan: true,
+      }).setContent(`<strong>${name}</strong><br/>距離: ${points[0]!.distance.toFixed(1)} km`);
 
-      markerClusterGroup.value.addLayer(marker);
+      marker.bindPopup(popup);
+      markers.push(marker);
     }
+
+    if (markers.length > 0) {
+      markerClusterGroup.value.addLayers(markers);
+    }
+
+    if (!mapRef.value.hasLayer(markerClusterGroup.value as MarkerClusterGroup)) {
+      mapRef.value.addLayer(markerClusterGroup.value as MarkerClusterGroup);
+    }
+    markerClusterGroup.value.on("popupopen", (e) => {
+      currentPopup = {
+        popup: e.popup,
+        marker: e.target,
+      };
+    });
+
+    markerClusterGroup.value.on("popupclose", () => {
+      currentPopup = null;
+    });
   }
 
-  watch([() => store.renewalPointVMs.length, filterText], () => render(), { immediate: true });
+  const onZoom = () => {
+    if (!currentPopup) return;
+
+    if (currentPopup.popup.isOpen()) {
+      currentPopup.marker.closePopup();
+    }
+  };
+
+  const setupMapEvents = () => {
+    if (mapRef.value) {
+      mapRef.value.off("zoomstart", onZoom);
+      mapRef.value.on("zoomstart", onZoom);
+    }
+  };
+
+  watch(
+    [() => store.renewalPointVMs.length, filterText],
+    () => {
+      render().then(() => {
+        setupMapEvents();
+      });
+    },
+    { immediate: true }
+  );
 
   onBeforeUnmount(() => {
     if (markerClusterGroup.value && mapRef.value) {
+      mapRef.value.off("zoomstart", onZoom);
+      markerClusterGroup.value.off("popupopen");
+      markerClusterGroup.value.off("popupclose");
       markerClusterGroup.value.clearLayers();
       mapRef.value.removeLayer(markerClusterGroup.value as MarkerClusterGroup);
     }
