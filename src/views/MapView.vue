@@ -3,6 +3,7 @@ import { onMounted, shallowRef } from "vue";
 import { useLocationStore } from "@/stores/location.store";
 import BaseMap from "@/components/map/BaseMap.vue";
 import RenewalList from "@/components/list/RenewalList.vue";
+import { useErrorHandle } from "@/composables/useErrorHandle";
 
 const store = useLocationStore();
 const mapRef = shallowRef<any>(null);
@@ -12,15 +13,29 @@ function handleMapRef(refVal: any) {
   mapRef.value = refVal;
 }
 
+const { handleError } = useErrorHandle();
+
 onMounted(() => {
   navigator.geolocation.getCurrentPosition(
     async (pos) => {
-      store.setUserLocation(pos.coords.latitude, pos.coords.longitude);
-      await store.fetchRenewalList();
-      await store.fetchPolygons();
+      try {
+        store.setUserLocation(pos.coords.latitude, pos.coords.longitude);
+        await store.fetchRenewalList();
+        await store.fetchPolygons();
+      } catch (error) {
+        handleError({
+          level: "toast",
+          message: "API 獲取資料失敗",
+          error,
+        });
+      }
     },
-    () => {
-      alert("Failed to get location");
+    (error) => {
+      handleError({
+        level: "toast",
+        message: "無法取得您的位置",
+        error,
+      });
     }
   );
 });

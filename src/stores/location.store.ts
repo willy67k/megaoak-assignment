@@ -89,7 +89,8 @@ export const useLocationStore = defineStore("location", {
           distance: item.distance,
         }));
       } catch (err) {
-        this.renewalError = "Failed to fetch renewal points";
+        this.renewalError = "取得圖釘點失敗";
+        throw err;
       } finally {
         this.renewalLoading = false;
       }
@@ -102,7 +103,8 @@ export const useLocationStore = defineStore("location", {
         const data = await getPolygons(import.meta.env.VITE_POLYGON_DIRECTORY);
         this.polygonsResponse = data;
       } catch (err) {
-        this.polygonsError = "Failed to fetch polygons";
+        this.polygonsError = "取得多邊圖層失敗";
+        throw err;
       } finally {
         this.polygonsLoading = false;
       }

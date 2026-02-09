@@ -2,10 +2,12 @@ import { watch, onBeforeUnmount, nextTick, type Ref, shallowRef } from "vue";
 import L, { type Map, Marker, MarkerClusterGroup } from "leaflet";
 import "leaflet.markercluster";
 import { useLocationStore, type RenewalPointVM } from "@/stores/location.store";
+import { useErrorHandle } from "@/composables/useErrorHandle";
 
 export function useRenewalMarker(mapRef: Ref<Map | null>, filterText?: Ref<string>) {
   const store = useLocationStore();
   const markerClusterGroup = shallowRef<MarkerClusterGroup | null>(null);
+  const { handleError } = useErrorHandle();
 
   function getGroupedPoints(): Record<string, RenewalPointVM[]> {
     const groups: Record<string, RenewalPointVM[]> = {};
@@ -22,62 +24,70 @@ export function useRenewalMarker(mapRef: Ref<Map | null>, filterText?: Ref<strin
   let markersMap: Record<string, Marker> = {};
 
   async function render() {
-    if (!mapRef.value) return;
+    try {
+      if (!mapRef.value) return;
 
-    await nextTick();
+      await nextTick();
 
-    if (markerClusterGroup.value) {
-      markerClusterGroup.value.off("popupopen");
-      markerClusterGroup.value.off("popupclose");
-      markerClusterGroup.value.clearLayers();
-    } else {
-      markerClusterGroup.value = new MarkerClusterGroup();
-      mapRef.value.addLayer(markerClusterGroup.value as MarkerClusterGroup);
-    }
-
-    markersMap = {};
-    const grouped = getGroupedPoints();
-    const markers: Marker[] = [];
-
-    for (const name in grouped) {
-      const points = grouped[name];
-      if (!points || points.length === 0) continue;
-
-      const { lat, lng } = points[0]!;
-      const marker = L.marker([lat, lng]);
-
-      (marker as any).data = {
-        name,
-        distance: points[0]!.distance,
-      };
-
-      markers.push(marker);
-      markersMap[name] = marker;
-    }
-
-    if (markers.length > 0) {
-      markerClusterGroup.value.addLayers(markers);
-    }
-
-    if (!mapRef.value.hasLayer(markerClusterGroup.value as MarkerClusterGroup)) {
-      mapRef.value.addLayer(markerClusterGroup.value as MarkerClusterGroup);
-    }
-
-    markerClusterGroup.value.on("click", (e) => {
-      const marker = e.layer as any;
-      const data = marker.data;
-      if (data) {
-        L.popup({
-          autoClose: true,
-          closeOnClick: true,
-          autoPan: true,
-          offset: [0, -17],
-        })
-          .setLatLng(e.latlng)
-          .setContent(`<strong>${data.name}</strong><br/>距離: ${data.distance.toFixed(1)} km`)
-          .openOn(mapRef.value!);
+      if (markerClusterGroup.value) {
+        markerClusterGroup.value.off("popupopen");
+        markerClusterGroup.value.off("popupclose");
+        markerClusterGroup.value.clearLayers();
+      } else {
+        markerClusterGroup.value = new MarkerClusterGroup();
+        mapRef.value.addLayer(markerClusterGroup.value as MarkerClusterGroup);
       }
-    });
+
+      markersMap = {};
+      const grouped = getGroupedPoints();
+      const markers: Marker[] = [];
+
+      for (const name in grouped) {
+        const points = grouped[name];
+        if (!points || points.length === 0) continue;
+
+        const { lat, lng } = points[0]!;
+        const marker = L.marker([lat, lng]);
+
+        (marker as any).data = {
+          name,
+          distance: points[0]!.distance,
+        };
+
+        markers.push(marker);
+        markersMap[name] = marker;
+      }
+
+      if (markers.length > 0) {
+        markerClusterGroup.value.addLayers(markers);
+      }
+
+      if (!mapRef.value.hasLayer(markerClusterGroup.value as MarkerClusterGroup)) {
+        mapRef.value.addLayer(markerClusterGroup.value as MarkerClusterGroup);
+      }
+
+      markerClusterGroup.value.on("click", (e) => {
+        const marker = e.layer as any;
+        const data = marker.data;
+        if (data) {
+          L.popup({
+            autoClose: true,
+            closeOnClick: true,
+            autoPan: true,
+            offset: [0, -17],
+          })
+            .setLatLng(e.latlng)
+            .setContent(`<strong>${data.name}</strong><br/>距離: ${data.distance.toFixed(1)} km`)
+            .openOn(mapRef.value!);
+        }
+      });
+    } catch (error) {
+      handleError({
+        level: "toast",
+        message: "渲染 Marker 失敗",
+        error,
+      });
+    }
   }
 
   const onZoom = () => {
@@ -92,21 +102,29 @@ export function useRenewalMarker(mapRef: Ref<Map | null>, filterText?: Ref<strin
   };
 
   function openPopup(stopName: string) {
-    const marker = markersMap[stopName] as any;
-    if (marker && markerClusterGroup.value) {
-      markerClusterGroup.value.zoomToShowLayer(marker, () => {
-        const data = marker.data;
-        if (data) {
-          L.popup({
-            autoClose: true,
-            closeOnClick: true,
-            autoPan: true,
-            offset: [0, -17],
-          })
-            .setLatLng(marker.getLatLng())
-            .setContent(`<strong>${data.name}</strong><br/>距離: ${data.distance.toFixed(1)} km`)
-            .openOn(mapRef.value!);
-        }
+    try {
+      const marker = markersMap[stopName] as any;
+      if (marker && markerClusterGroup.value) {
+        markerClusterGroup.value.zoomToShowLayer(marker, () => {
+          const data = marker.data;
+          if (data) {
+            L.popup({
+              autoClose: true,
+              closeOnClick: true,
+              autoPan: true,
+              offset: [0, -17],
+            })
+              .setLatLng(marker.getLatLng())
+              .setContent(`<strong>${data.name}</strong><br/>距離: ${data.distance.toFixed(1)} km`)
+              .openOn(mapRef.value!);
+          }
+        });
+      }
+    } catch (error) {
+      handleError({
+        level: "silent",
+        message: "打開 popup 失敗",
+        error,
       });
     }
   }

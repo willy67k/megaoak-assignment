@@ -1,13 +1,15 @@
 <script setup lang="ts">
-import { ref, computed, watch, onMounted, nextTick, onUnmounted, useTemplateRef, type ShallowRef } from "vue";
+import { ref, computed, watch, useTemplateRef, type ShallowRef } from "vue";
 import { useLocationStore, type RenewalPointVM } from "@/stores/location.store";
 import { useVirtualizer } from "@tanstack/vue-virtual";
 import type { Map } from "leaflet";
+import { useErrorHandle } from "@/composables/useErrorHandle";
 
 const store = useLocationStore();
 const searchText = ref("");
 const filteredPoints = computed(() => store.getFilteredRenewalPointVMs(searchText.value));
 const containerRef = useTemplateRef("containerRef");
+const { handleError } = useErrorHandle();
 const props = defineProps<{
   mapRef: ShallowRef<Map> | null;
   openPopup?: (name: string) => void;
@@ -24,10 +26,20 @@ watch(filteredPoints, (newList) => {
 });
 
 function flyToPoint(point: RenewalPointVM) {
-  if (props.openPopup) {
-    props.openPopup(point.stopName);
-  } else {
-    props.mapRef?.value.flyTo([point.lat, point.lng]);
+  try {
+    if (props.openPopup) {
+      props.openPopup(point.stopName);
+    } else if (props.mapRef?.value) {
+      props.mapRef.value.flyTo([point.lat, point.lng]);
+    } else {
+      handleError({ level: "silent", message: "地圖尚未準備就緒" });
+    }
+  } catch (error) {
+    handleError({
+      level: "toast",
+      message: "無法飛往指定地點",
+      error,
+    });
   }
 }
 </script>
