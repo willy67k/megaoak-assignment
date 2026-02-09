@@ -27,7 +27,7 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="layout">
+  <div id="layout" class="h-screen">
     <BaseMap ref="baseMapRef" @updateMapRef="handleMapRef" />
     <RenewalList :mapRef="mapRef" :openPopup="(name) => baseMapRef?.openPopup(name)" />
   </div>

@@ -42,11 +42,5 @@ onMounted(() => {
 </script>
 
 <template>
-  <div id="map"></div>
+  <div id="map" class="h-[60%]"></div>
 </template>
-
-<style>
-#map {
-  height: 60vh;
-}
-</style>

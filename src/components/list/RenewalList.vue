@@ -8,9 +8,6 @@ const store = useLocationStore();
 const searchText = ref("");
 const filteredPoints = computed(() => store.getFilteredRenewalPointVMs(searchText.value));
 const containerRef = useTemplateRef("containerRef");
-const wrapperRef = useTemplateRef("wrapperRef");
-const inputRef = useTemplateRef("inputRef");
-const containerHeight = ref(0);
 const props = defineProps<{
   mapRef: ShallowRef<Map> | null;
   openPopup?: (name: string) => void;
@@ -26,25 +23,6 @@ watch(filteredPoints, (newList) => {
   virtualizer.value.setOptions({ ...virtualizer.value.options, count: newList.length });
 });
 
-function updateContainerHeight() {
-  const mapEl = document.getElementById("map");
-  const inputEl = inputRef.value;
-  const wrapperEl = wrapperRef.value;
-
-  if (!mapEl || !inputEl || !wrapperEl) return;
-
-  const wrapperStyle = getComputedStyle(wrapperEl);
-  const wrapperPaddingTop = parseInt(wrapperStyle.paddingTop) || 0;
-  const wrapperPaddingBottom = parseInt(wrapperStyle.paddingBottom) || 0;
-
-  const inputStyle = getComputedStyle(inputEl);
-  const inputMarginBottom = parseInt(inputStyle.marginBottom) || 0;
-
-  const height = window.innerHeight - mapEl.offsetHeight - inputEl.offsetHeight - wrapperPaddingTop - inputMarginBottom - wrapperPaddingBottom;
-
-  containerHeight.value = height > 0 ? height : 100;
-}
-
 function flyToPoint(point: RenewalPointVM) {
   if (props.openPopup) {
     props.openPopup(point.stopName);
@@ -52,22 +30,10 @@ function flyToPoint(point: RenewalPointVM) {
     props.mapRef?.value.flyTo([point.lat, point.lng]);
   }
 }
-
-onMounted(() => {
-  nextTick(() => {
-    updateContainerHeight();
-  });
-
-  window.addEventListener("resize", updateContainerHeight);
-});
-
-onUnmounted(() => {
-  window.removeEventListener("resize", updateContainerHeight);
-});
 </script>
 
 <template>
-  <div ref="wrapperRef" class="w-full bg-orange-200/10 p-4">
+  <div id="list" ref="wrapperRef" class="flex h-[40%] w-full flex-col bg-orange-200/10 p-4">
     <input
       ref="inputRef"
       v-model="searchText"
@@ -75,7 +41,7 @@ onUnmounted(() => {
       placeholder="請輸入您要查詢的地址"
       class="mb-4 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-200 focus:outline-none"
     />
-    <div ref="containerRef" :style="{ height: containerHeight + 'px' }" class="relative overflow-auto">
+    <div ref="containerRef" class="relative overflow-auto">
       <div v-if="!store.renewalLoading && !store.renewalError" :style="{ height: virtualizer.getTotalSize() + 'px', position: 'relative' }">
         <div
           v-for="virtualRow in virtualizer.getVirtualItems()"
