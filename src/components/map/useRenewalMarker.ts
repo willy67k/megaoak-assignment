@@ -1,5 +1,5 @@
 import { watch, onBeforeUnmount, nextTick, type Ref, shallowRef } from "vue";
-import L, { Map, MarkerClusterGroup } from "leaflet";
+import L, { type Map, Marker, MarkerClusterGroup } from "leaflet";
 import "leaflet.markercluster";
 import { useLocationStore, type RenewalPointVM } from "@/stores/location.store";
 
@@ -19,19 +19,25 @@ export function useRenewalMarker(mapRef: Ref<Map | null>, filterText?: Ref<strin
     return groups;
   }
 
+  let markersMap: Record<string, Marker> = {};
+
   async function render() {
     if (!mapRef.value) return;
 
     await nextTick();
 
-    if (!markerClusterGroup.value) {
-      markerClusterGroup.value = L.markerClusterGroup();
-      mapRef.value.addLayer(markerClusterGroup.value as MarkerClusterGroup);
-    } else {
+    if (markerClusterGroup.value) {
+      markerClusterGroup.value.off("popupopen");
+      markerClusterGroup.value.off("popupclose");
       markerClusterGroup.value.clearLayers();
+    } else {
+      markerClusterGroup.value = new MarkerClusterGroup();
+      mapRef.value.addLayer(markerClusterGroup.value as MarkerClusterGroup);
     }
 
+    markersMap = {};
     const grouped = getGroupedPoints();
+    const markers: Marker[] = [];
 
     for (const name in grouped) {
       const points = grouped[name];
@@ -40,21 +46,90 @@ export function useRenewalMarker(mapRef: Ref<Map | null>, filterText?: Ref<strin
       const { lat, lng } = points[0]!;
       const marker = L.marker([lat, lng]);
 
-      const popupHtml = `<strong>${name}</strong><br/>距離: ${points[0]!.distance.toFixed(1)} km`;
-      marker.bindPopup(popupHtml);
+      (marker as any).data = {
+        name,
+        distance: points[0]!.distance,
+      };
 
-      markerClusterGroup.value.addLayer(marker);
+      markers.push(marker);
+      markersMap[name] = marker;
+    }
+
+    if (markers.length > 0) {
+      markerClusterGroup.value.addLayers(markers);
+    }
+
+    if (!mapRef.value.hasLayer(markerClusterGroup.value as MarkerClusterGroup)) {
+      mapRef.value.addLayer(markerClusterGroup.value as MarkerClusterGroup);
+    }
+
+    markerClusterGroup.value.on("click", (e) => {
+      const marker = e.layer as any;
+      const data = marker.data;
+      if (data) {
+        L.popup({
+          autoClose: true,
+          closeOnClick: true,
+          autoPan: true,
+          offset: [0, -17],
+        })
+          .setLatLng(e.latlng)
+          .setContent(`<strong>${data.name}</strong><br/>距離: ${data.distance.toFixed(1)} km`)
+          .openOn(mapRef.value!);
+      }
+    });
+  }
+
+  const onZoom = () => {
+    mapRef.value?.closePopup();
+  };
+
+  const setupMapEvents = () => {
+    if (mapRef.value) {
+      mapRef.value.off("zoomstart", onZoom);
+      mapRef.value.on("zoomstart", onZoom);
+    }
+  };
+
+  function openPopup(stopName: string) {
+    const marker = markersMap[stopName] as any;
+    if (marker && markerClusterGroup.value) {
+      markerClusterGroup.value.zoomToShowLayer(marker, () => {
+        const data = marker.data;
+        if (data) {
+          L.popup({
+            autoClose: true,
+            closeOnClick: true,
+            autoPan: true,
+            offset: [0, -17],
+          })
+            .setLatLng(marker.getLatLng())
+            .setContent(`<strong>${data.name}</strong><br/>距離: ${data.distance.toFixed(1)} km`)
+            .openOn(mapRef.value!);
+        }
+      });
     }
   }
 
-  watch([() => store.renewalPointVMs.length, filterText], () => render(), { immediate: true });
+  watch(
+    [() => store.renewalPointVMs.length, filterText],
+    () => {
+      render().then(() => {
+        setupMapEvents();
+      });
+    },
+    { immediate: true }
+  );
 
   onBeforeUnmount(() => {
     if (markerClusterGroup.value && mapRef.value) {
+      mapRef.value.off("zoomstart", onZoom);
+      markerClusterGroup.value.off("popupopen");
+      markerClusterGroup.value.off("popupclose");
       markerClusterGroup.value.clearLayers();
       mapRef.value.removeLayer(markerClusterGroup.value as MarkerClusterGroup);
     }
   });
 
-  return { render };
+  return { render, openPopup };
 }

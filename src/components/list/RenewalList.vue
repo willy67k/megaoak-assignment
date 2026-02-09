@@ -1,7 +1,8 @@
 <script setup lang="ts">
-import { ref, computed, watch, onMounted, nextTick, onUnmounted, useTemplateRef } from "vue";
-import { useLocationStore } from "@/stores/location.store";
+import { ref, computed, watch, onMounted, nextTick, onUnmounted, useTemplateRef, type ShallowRef } from "vue";
+import { useLocationStore, type RenewalPointVM } from "@/stores/location.store";
 import { useVirtualizer } from "@tanstack/vue-virtual";
+import type { Map } from "leaflet";
 
 const store = useLocationStore();
 const searchText = ref("");
@@ -10,6 +11,10 @@ const containerRef = useTemplateRef("containerRef");
 const wrapperRef = useTemplateRef("wrapperRef");
 const inputRef = useTemplateRef("inputRef");
 const containerHeight = ref(0);
+const props = defineProps<{
+  mapRef: ShallowRef<Map> | null;
+  openPopup?: (name: string) => void;
+}>();
 
 const virtualizer = useVirtualizer({
   count: filteredPoints.value.length,
@@ -38,6 +43,14 @@ function updateContainerHeight() {
   const height = window.innerHeight - mapEl.offsetHeight - inputEl.offsetHeight - wrapperPaddingTop - inputMarginBottom - wrapperPaddingBottom;
 
   containerHeight.value = height > 0 ? height : 100;
+}
+
+function flyToPoint(point: RenewalPointVM) {
+  if (props.openPopup) {
+    props.openPopup(point.stopName);
+  } else {
+    props.mapRef?.value.flyTo([point.lat, point.lng]);
+  }
 }
 
 onMounted(() => {
@@ -73,7 +86,7 @@ onUnmounted(() => {
             width: '100%',
           }"
         >
-          <li class="flex items-center justify-between bg-white px-4 py-4">
+          <li class="flex cursor-pointer items-center justify-between bg-white px-4 py-4" @click="() => flyToPoint(filteredPoints[virtualRow.index]!)">
             <p class="text-xl font-bold text-gray-800">{{ filteredPoints[virtualRow.index]!.stopName }}</p>
             <p class="text font-bold text-blue-700/60">
               <span class="mr-2 text-3xl">{{ filteredPoints[virtualRow.index]!.distance.toFixed(1) }}</span>
