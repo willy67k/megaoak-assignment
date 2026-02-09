@@ -20,6 +20,8 @@ export function useRenewalMarker(mapRef: Ref<Map | null>, filterText?: Ref<strin
     return groups;
   }
 
+  let markersMap: Record<string, Marker> = {};
+
   async function render() {
     if (!mapRef.value) return;
 
@@ -34,6 +36,7 @@ export function useRenewalMarker(mapRef: Ref<Map | null>, filterText?: Ref<strin
       mapRef.value.addLayer(markerClusterGroup.value as MarkerClusterGroup);
     }
 
+    markersMap = {};
     const grouped = getGroupedPoints();
     const markers: Marker[] = [];
 
@@ -44,14 +47,14 @@ export function useRenewalMarker(mapRef: Ref<Map | null>, filterText?: Ref<strin
       const { lat, lng } = points[0]!;
       const marker = L.marker([lat, lng]);
 
-      const popup = L.popup({
-        autoClose: true,
-        closeOnClick: true,
-        autoPan: true,
-      }).setContent(`<strong>${name}</strong><br/>距離: ${points[0]!.distance.toFixed(1)} km`);
+      // Attach data to marker for popup
+      (marker as any).data = {
+        name,
+        distance: points[0]!.distance,
+      };
 
-      marker.bindPopup(popup);
       markers.push(marker);
+      markersMap[name] = marker;
     }
 
     if (markers.length > 0) {
@@ -61,24 +64,28 @@ export function useRenewalMarker(mapRef: Ref<Map | null>, filterText?: Ref<strin
     if (!mapRef.value.hasLayer(markerClusterGroup.value as MarkerClusterGroup)) {
       mapRef.value.addLayer(markerClusterGroup.value as MarkerClusterGroup);
     }
-    markerClusterGroup.value.on("popupopen", (e) => {
-      currentPopup = {
-        popup: e.popup,
-        marker: e.target,
-      };
+    
+    // Decoupled popup handler
+    markerClusterGroup.value.on("click", (e) => {
+      const marker = e.layer as any;
+      const data = marker.data;
+      if (data) {
+        L.popup({
+          autoClose: true,
+          closeOnClick: true,
+          autoPan: true,
+          offset: [0, -17],
+        })
+          .setLatLng(e.latlng)
+          .setContent(`<strong>${data.name}</strong><br/>距離: ${data.distance.toFixed(1)} km`)
+          .openOn(mapRef.value!);
+      }
     });
 
-    markerClusterGroup.value.on("popupclose", () => {
-      currentPopup = null;
-    });
   }
 
   const onZoom = () => {
-    if (!currentPopup) return;
-
-    if (currentPopup.popup.isOpen()) {
-      currentPopup.marker.closePopup();
-    }
+    mapRef.value?.closePopup();
   };
 
   const setupMapEvents = () => {
@@ -87,6 +94,26 @@ export function useRenewalMarker(mapRef: Ref<Map | null>, filterText?: Ref<strin
       mapRef.value.on("zoomstart", onZoom);
     }
   };
+
+  function openPopup(stopName: string) {
+    const marker = markersMap[stopName] as any;
+    if (marker && markerClusterGroup.value) {
+      markerClusterGroup.value.zoomToShowLayer(marker, () => {
+        const data = marker.data;
+        if (data) {
+           L.popup({
+            autoClose: true,
+            closeOnClick: true,
+            autoPan: true,
+            offset: [0, -17],
+          })
+            .setLatLng(marker.getLatLng())
+            .setContent(`<strong>${data.name}</strong><br/>距離: ${data.distance.toFixed(1)} km`)
+            .openOn(mapRef.value!);
+        }
+      });
+    }
+  }
 
   watch(
     [() => store.renewalPointVMs.length, filterText],
@@ -108,5 +135,5 @@ export function useRenewalMarker(mapRef: Ref<Map | null>, filterText?: Ref<strin
     }
   });
 
-  return { render };
+  return { render, openPopup };
 }

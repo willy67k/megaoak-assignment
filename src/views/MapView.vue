@@ -6,6 +6,7 @@ import RenewalList from "@/components/list/RenewalList.vue";
 
 const store = useLocationStore();
 const mapRef = ref<any>(null);
+const baseMapRef = ref<InstanceType<typeof BaseMap> | null>(null);
 
 function handleMapRef(refVal: any) {
   mapRef.value = refVal;
@@ -27,7 +28,7 @@ onMounted(() => {
 
 <template>
   <div class="layout">
-    <BaseMap @updateMapRef="handleMapRef" />
-    <RenewalList :mapRef="mapRef" />/>
+    <BaseMap ref="baseMapRef" @updateMapRef="handleMapRef" />
+    <RenewalList :mapRef="mapRef" :openPopup="(name) => baseMapRef?.openPopup(name)" />
   </div>
 </template>

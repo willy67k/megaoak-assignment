@@ -13,6 +13,7 @@ const inputRef = useTemplateRef("inputRef");
 const containerHeight = ref(0);
 const props = defineProps<{
   mapRef: Ref<Map> | null;
+  openPopup?: (name: string) => void;
 }>();
 
 const virtualizer = useVirtualizer({
@@ -45,7 +46,11 @@ function updateContainerHeight() {
 }
 
 function flyToPoint(point: RenewalPointVM) {
-  props.mapRef?.value.flyTo([point.lat, point.lng]);
+  if (props.openPopup) {
+    props.openPopup(point.stopName);
+  } else {
+    props.mapRef?.value.flyTo([point.lat, point.lng]);
+  }
 }
 
 onMounted(() => {

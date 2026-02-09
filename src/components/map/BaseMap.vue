@@ -12,8 +12,12 @@ const filterText = ref("");
 const emit = defineEmits(["updateMapRef"]);
 
 useUserMarker(map as Ref<Map>);
-useRenewalMarker(map as Ref<Map>, filterText);
+const { openPopup } = useRenewalMarker(map as Ref<Map>, filterText);
 usePolygonLayer(map as Ref<Map>);
+
+defineExpose({
+  openPopup,
+});
 
 watch(
   () => store.userLocation,
