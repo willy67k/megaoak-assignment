@@ -1,12 +1,11 @@
 import { ref, watch, onBeforeUnmount, nextTick, type Ref } from "vue";
-import L, { type Map, Marker, MarkerClusterGroup, Popup } from "leaflet";
+import L, { type Map, Marker, MarkerClusterGroup } from "leaflet";
 import "leaflet.markercluster";
 import { useLocationStore, type RenewalPointVM } from "@/stores/location.store";
 
 export function useRenewalMarker(mapRef: Ref<Map | null>, filterText?: Ref<string>) {
   const store = useLocationStore();
   const markerClusterGroup = ref<MarkerClusterGroup | null>(null);
-  let currentPopup: { popup: Popup; marker: Marker } | null = null;
 
   function getGroupedPoints(): Record<string, RenewalPointVM[]> {
     const groups: Record<string, RenewalPointVM[]> = {};
@@ -47,7 +46,6 @@ export function useRenewalMarker(mapRef: Ref<Map | null>, filterText?: Ref<strin
       const { lat, lng } = points[0]!;
       const marker = L.marker([lat, lng]);
 
-      // Attach data to marker for popup
       (marker as any).data = {
         name,
         distance: points[0]!.distance,
@@ -64,8 +62,7 @@ export function useRenewalMarker(mapRef: Ref<Map | null>, filterText?: Ref<strin
     if (!mapRef.value.hasLayer(markerClusterGroup.value as MarkerClusterGroup)) {
       mapRef.value.addLayer(markerClusterGroup.value as MarkerClusterGroup);
     }
-    
-    // Decoupled popup handler
+
     markerClusterGroup.value.on("click", (e) => {
       const marker = e.layer as any;
       const data = marker.data;
@@ -81,7 +78,6 @@ export function useRenewalMarker(mapRef: Ref<Map | null>, filterText?: Ref<strin
           .openOn(mapRef.value!);
       }
     });
-
   }
 
   const onZoom = () => {
@@ -101,7 +97,7 @@ export function useRenewalMarker(mapRef: Ref<Map | null>, filterText?: Ref<strin
       markerClusterGroup.value.zoomToShowLayer(marker, () => {
         const data = marker.data;
         if (data) {
-           L.popup({
+          L.popup({
             autoClose: true,
             closeOnClick: true,
             autoPan: true,
