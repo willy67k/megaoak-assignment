@@ -2,6 +2,8 @@ import { watch, shallowRef, type Ref } from "vue";
 import L, { Map, GeoJSON } from "leaflet";
 import { useLocationStore } from "@/stores/location.store";
 import { useErrorHandle } from "@/composables/useErrorHandle";
+import { POLYGON_STYLE } from "@/constants/map";
+import { ERROR_MESSAGES } from "@/constants/errorMessages";
 
 export function usePolygonLayer(map: Ref<Map>) {
   const store = useLocationStore();
@@ -19,11 +21,7 @@ export function usePolygonLayer(map: Ref<Map>) {
       }
       try {
         geoJsonLayerRef.value = L.geoJSON(store.polygonsResponse.result, {
-          style: {
-            color: "#2AD8A2",
-            weight: 2,
-            fillOpacity: 0.2,
-          },
+          style: POLYGON_STYLE,
           onEachFeature: (feature, layer) => {
             const name = feature.properties?.TxtMemo || feature.properties?.分區;
             layer.bindTooltip(name, { sticky: true });
@@ -32,7 +30,7 @@ export function usePolygonLayer(map: Ref<Map>) {
       } catch (error) {
         handleError({
           level: "toast",
-          message: "圖層載入錯誤",
+          message: ERROR_MESSAGES.MAP.POLYGON_LOAD_FAILED,
           error,
         });
       }

@@ -2,19 +2,8 @@ import { onMounted } from "vue";
 import { useAuthStore } from "@/stores/auth.store";
 import { jwtDecode } from "jwt-decode";
 import { useErrorHandle } from "./useErrorHandle";
-
-declare global {
-  interface Window {
-    google: any;
-  }
-}
-
-export interface JwtGooglePayload {
-  sub: string;
-  name: string;
-  email: string;
-  picture: string;
-}
+import type { JwtGooglePayload } from "@/types";
+import { ERROR_MESSAGES } from "@/constants/errorMessages";
 
 export function useGoogleAuth() {
   const authStore = useAuthStore();
@@ -25,7 +14,7 @@ export function useGoogleAuth() {
       const payload: JwtGooglePayload = jwtDecode(response.credential);
 
       if (!payload) {
-        handleError({ level: "toast", message: "Google 登入解析發生錯誤" });
+        handleError({ level: "toast", message: ERROR_MESSAGES.AUTH.GOOGLE_DECODE_FAILED });
         return;
       }
 
@@ -38,7 +27,7 @@ export function useGoogleAuth() {
     } catch (error) {
       handleError({
         level: "toast",
-        message: "Google 登入失敗",
+        message: ERROR_MESSAGES.AUTH.GOOGLE_LOGIN_FAILED,
         error,
       });
     }
@@ -66,7 +55,7 @@ export function useGoogleAuth() {
     script.onerror = (error) => {
       handleError({
         level: "toast",
-        message: "Google SDK 載入失敗",
+        message: ERROR_MESSAGES.AUTH.GOOGLE_SDK_LOAD_FAILED,
         error,
       });
     };

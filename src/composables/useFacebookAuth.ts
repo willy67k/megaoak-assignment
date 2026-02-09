@@ -1,13 +1,8 @@
 import { onMounted } from "vue";
 import { useAuthStore } from "@/stores/auth.store";
 import { useErrorHandle } from "./useErrorHandle";
-
-declare global {
-  interface Window {
-    FB: any;
-    fbAsyncInit: () => void;
-  }
-}
+import type { FacebookUser } from "@/types";
+import { ERROR_MESSAGES } from "@/constants/errorMessages";
 
 // Email is not allowed in development mode
 const scopes = ["public_profile"];
@@ -35,7 +30,7 @@ export function useFacebookAuth() {
     script.onerror = (error) => {
       handleError({
         level: "toast",
-        message: "Facebook SDK 載入失敗",
+        message: ERROR_MESSAGES.AUTH.FACEBOOK_SDK_LOAD_FAILED,
         error,
       });
     };
@@ -45,7 +40,7 @@ export function useFacebookAuth() {
   function loginFacebook() {
     try {
       if (!window.FB) {
-        handleError({ level: "toast", message: "Facebook SDK 未載入完成" });
+        handleError({ level: "toast", message: ERROR_MESSAGES.AUTH.FACEBOOK_SDK_NOT_READY });
         return;
       }
       window.FB.login(
@@ -59,7 +54,7 @@ export function useFacebookAuth() {
               });
             });
           } else {
-            handleError({ level: "toast", message: "Facebook 登入取消或失敗" });
+            handleError({ level: "toast", message: ERROR_MESSAGES.AUTH.FACEBOOK_LOGIN_CANCELLED });
           }
         },
         { scope: scopes.join(",") }
@@ -67,7 +62,7 @@ export function useFacebookAuth() {
     } catch (error) {
       handleError({
         level: "toast",
-        message: "Facebook 登入發生錯誤",
+        message: ERROR_MESSAGES.AUTH.FACEBOOK_LOGIN_ERROR,
         error,
       });
     }

@@ -1,8 +1,11 @@
 import { watch, onBeforeUnmount, nextTick, type Ref, shallowRef } from "vue";
 import L, { type Map, Marker, MarkerClusterGroup } from "leaflet";
 import "leaflet.markercluster";
-import { useLocationStore, type RenewalPointVM } from "@/stores/location.store";
+import { useLocationStore } from "@/stores/location.store";
 import { useErrorHandle } from "@/composables/useErrorHandle";
+import { POPUP_OPTIONS, MAP_FLY_TO_ZOOM } from "@/constants/map";
+import { ERROR_MESSAGES } from "@/constants/errorMessages";
+import type { RenewalPointVM } from "@/types";
 
 export function useRenewalMarker(mapRef: Ref<Map | null>, filterText?: Ref<string>) {
   const store = useLocationStore();
@@ -70,12 +73,7 @@ export function useRenewalMarker(mapRef: Ref<Map | null>, filterText?: Ref<strin
         const marker = e.layer as any;
         const data = marker.data;
         if (data) {
-          L.popup({
-            autoClose: true,
-            closeOnClick: true,
-            autoPan: true,
-            offset: [0, -17],
-          })
+          L.popup(POPUP_OPTIONS)
             .setLatLng(e.latlng)
             .setContent(`<strong>${data.name}</strong><br/>距離: ${data.distance.toFixed(1)} km`)
             .openOn(mapRef.value!);
@@ -84,7 +82,7 @@ export function useRenewalMarker(mapRef: Ref<Map | null>, filterText?: Ref<strin
     } catch (error) {
       handleError({
         level: "toast",
-        message: "渲染 Marker 失敗",
+        message: ERROR_MESSAGES.MAP.MARKER_RENDER_FAILED,
         error,
       });
     }
@@ -108,22 +106,18 @@ export function useRenewalMarker(mapRef: Ref<Map | null>, filterText?: Ref<strin
         markerClusterGroup.value.zoomToShowLayer(marker, () => {
           const data = marker.data;
           if (data) {
-            L.popup({
-              autoClose: true,
-              closeOnClick: true,
-              autoPan: true,
-              offset: [0, -17],
-            })
+            L.popup(POPUP_OPTIONS)
               .setLatLng(marker.getLatLng())
               .setContent(`<strong>${data.name}</strong><br/>距離: ${data.distance.toFixed(1)} km`)
               .openOn(mapRef.value!);
+            mapRef.value?.flyTo(marker.getLatLng(), MAP_FLY_TO_ZOOM);
           }
         });
       }
     } catch (error) {
       handleError({
         level: "silent",
-        message: "打開 popup 失敗",
+        message: ERROR_MESSAGES.MAP.POPUP_OPEN_FAILED,
         error,
       });
     }

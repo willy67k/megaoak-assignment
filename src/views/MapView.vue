@@ -4,6 +4,7 @@ import { useLocationStore } from "@/stores/location.store";
 import BaseMap from "@/components/map/BaseMap.vue";
 import RenewalList from "@/components/list/RenewalList.vue";
 import { useErrorHandle } from "@/composables/useErrorHandle";
+import { ERROR_MESSAGES } from "@/constants/errorMessages";
 
 const store = useLocationStore();
 const mapRef = shallowRef<any>(null);
@@ -25,7 +26,7 @@ onMounted(() => {
       } catch (error) {
         handleError({
           level: "toast",
-          message: "API 獲取資料失敗",
+          message: ERROR_MESSAGES.API.FETCH_DATA_FAILED,
           error,
         });
       }
@@ -33,7 +34,7 @@ onMounted(() => {
     (error) => {
       handleError({
         level: "toast",
-        message: "無法取得您的位置",
+        message: ERROR_MESSAGES.MAP.LOCATION_GET_FAILED,
         error,
       });
     }

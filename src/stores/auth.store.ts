@@ -1,18 +1,5 @@
 import { defineStore } from "pinia";
-
-export interface AuthUser {
-  google?: {
-    id: string;
-    name: string;
-    email?: string;
-    avatar?: string;
-  };
-  facebook?: {
-    id: string;
-    name: string;
-    avatar?: string;
-  };
-}
+import type { AuthUser } from "@/types";
 
 export const useAuthStore = defineStore("auth", {
   state: () => ({

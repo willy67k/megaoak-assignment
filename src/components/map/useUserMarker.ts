@@ -1,7 +1,8 @@
 import { watch, type Ref } from "vue";
 import L, { Marker, Map, LatLng } from "leaflet";
 import { useLocationStore } from "@/stores/location.store";
-import { useAuthStore, type AuthUser } from "@/stores/auth.store";
+import { useAuthStore } from "@/stores/auth.store";
+import type { AuthUser } from "@/types";
 import DOMPurify from "dompurify";
 
 export function useUserMarker(map: Ref<Map>) {

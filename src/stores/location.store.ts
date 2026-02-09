@@ -1,63 +1,13 @@
 import { defineStore } from "pinia";
 import { getDistanceList } from "@/api/xinbei.distance";
 import { getPolygons } from "@/api/xinbei.polygon";
-import type { Feature, FeatureCollection } from "geojson";
-
-export interface LatLng {
-  lat: number;
-  lng: number;
-}
-
-export interface RenewalPointResponse {
-  result: RenewalPoint[];
-  tod: boolean;
-}
-
-export interface RenewalPoint {
-  distance: number;
-  id: number;
-  is_tod: number;
-  latitude: number;
-  longitude: number;
-  name: string;
-  radius: number;
-  stop_name: string;
-}
-
-export interface RenewalPointVM {
-  id: number;
-  stopName: string;
-  lat: number;
-  lng: number;
-  distance: number;
-}
-
-export interface PolygonsResponse {
-  result: PolygonsResult;
-}
-
-export interface PolygonsResult extends FeatureCollection {
-  crs: {
-    properties: {
-      name: string;
-    };
-    type: string;
-  };
-  name: string;
-  features: PolygonsFeature[];
-}
-
-export interface PolygonsFeature extends Feature {
-  properties: {
-    SHAPE_Area: number;
-    TxtMemo: string;
-    分區: string;
-  };
-}
+import type { LatLng, RenewalPoint, RenewalPointResponse, RenewalPointVM, PolygonsResponse } from "@/types";
+import { ERROR_MESSAGES } from "@/constants/errorMessages";
 
 export const useLocationStore = defineStore("location", {
   state: () => ({
     userLocation: null as LatLng | null,
+    selectedRenewalPoint: null as RenewalPointVM | null,
     renewalResponse: { result: [], tod: false } as RenewalPointResponse,
     renewalPointVMs: [] as RenewalPointVM[],
     polygonsResponse: {} as PolygonsResponse,
@@ -70,6 +20,10 @@ export const useLocationStore = defineStore("location", {
   actions: {
     setUserLocation(lat: number, lng: number) {
       this.userLocation = { lat, lng };
+    },
+
+    setSelectedRenewalPoint(point: RenewalPointVM | null) {
+      this.selectedRenewalPoint = point;
     },
 
     async fetchRenewalList() {
@@ -89,7 +43,7 @@ export const useLocationStore = defineStore("location", {
           distance: item.distance,
         }));
       } catch (err) {
-        this.renewalError = "取得圖釘點失敗";
+        this.renewalError = ERROR_MESSAGES.API.FETCH_RENEWAL_POINTS_FAILED;
         throw err;
       } finally {
         this.renewalLoading = false;
@@ -103,7 +57,7 @@ export const useLocationStore = defineStore("location", {
         const data = await getPolygons(import.meta.env.VITE_POLYGON_DIRECTORY);
         this.polygonsResponse = data;
       } catch (err) {
-        this.polygonsError = "取得多邊圖層失敗";
+        this.polygonsError = ERROR_MESSAGES.API.FETCH_POLYGONS_FAILED;
         throw err;
       } finally {
         this.polygonsLoading = false;

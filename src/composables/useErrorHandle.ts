@@ -1,12 +1,5 @@
 import { toast } from "vue3-toastify";
-
-export type ErrorLevel = "silent" | "toast" | "throw";
-
-export interface HandleErrorOptions {
-  level?: ErrorLevel;
-  message?: string;
-  error?: unknown;
-}
+import type { HandleErrorOptions } from "@/types";
 
 export function useErrorHandle() {
   const handleError = (options: HandleErrorOptions) => {

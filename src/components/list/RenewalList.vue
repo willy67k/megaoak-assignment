@@ -1,9 +1,11 @@
 <script setup lang="ts">
 import { ref, computed, watch, useTemplateRef, type ShallowRef } from "vue";
-import { useLocationStore, type RenewalPointVM } from "@/stores/location.store";
+import { useLocationStore } from "@/stores/location.store";
+import type { RenewalPointVM } from "@/types";
 import { useVirtualizer } from "@tanstack/vue-virtual";
 import type { Map } from "leaflet";
 import { useErrorHandle } from "@/composables/useErrorHandle";
+import { ERROR_MESSAGES } from "@/constants/errorMessages";
 
 const store = useLocationStore();
 const searchText = ref("");
@@ -32,12 +34,12 @@ function flyToPoint(point: RenewalPointVM) {
     } else if (props.mapRef?.value) {
       props.mapRef.value.flyTo([point.lat, point.lng]);
     } else {
-      handleError({ level: "silent", message: "地圖尚未準備就緒" });
+      handleError({ level: "silent", message: ERROR_MESSAGES.MAP.INIT_FAILED });
     }
   } catch (error) {
     handleError({
       level: "toast",
-      message: "無法飛往指定地點",
+      message: ERROR_MESSAGES.MAP.FLY_TO_FAILED,
       error,
     });
   }
