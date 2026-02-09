@@ -1,10 +1,10 @@
-import { watch, ref, type Ref } from "vue";
+import { watch, shallowRef, type Ref } from "vue";
 import L, { Map, GeoJSON } from "leaflet";
 import { useLocationStore } from "@/stores/location.store";
 
 export function usePolygonLayer(map: Ref<Map>) {
   const store = useLocationStore();
-  const geoJsonLayerRef: Ref<GeoJSON | null> = ref(null);
+  const geoJsonLayerRef = shallowRef<GeoJSON | null>(null);
 
   watch(
     () => store.polygonsResponse,

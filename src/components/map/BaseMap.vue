@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, ref, watch, type Ref } from "vue";
+import { onMounted, ref, shallowRef, watch, type Ref } from "vue";
 import L, { Map, type LatLngExpression } from "leaflet";
 import { useLocationStore } from "@/stores/location.store";
 import { useUserMarker } from "./useUserMarker";
@@ -7,7 +7,7 @@ import { useRenewalMarker } from "./useRenewalMarker";
 import { usePolygonLayer } from "./usePolygonLayer";
 
 const store = useLocationStore();
-const map = ref<Map>();
+const map = shallowRef<Map>();
 const filterText = ref("");
 
 useUserMarker(map as Ref<Map>);

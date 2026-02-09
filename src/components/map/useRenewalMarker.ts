@@ -1,11 +1,11 @@
-import { ref, watch, onBeforeUnmount, nextTick, type Ref } from "vue";
+import { watch, onBeforeUnmount, nextTick, type Ref, shallowRef } from "vue";
 import L, { Map, MarkerClusterGroup } from "leaflet";
 import "leaflet.markercluster";
 import { useLocationStore, type RenewalPointVM } from "@/stores/location.store";
 
 export function useRenewalMarker(mapRef: Ref<Map | null>, filterText?: Ref<string>) {
   const store = useLocationStore();
-  const markerClusterGroup = ref<MarkerClusterGroup | null>(null);
+  const markerClusterGroup = shallowRef<MarkerClusterGroup | null>(null);
 
   function getGroupedPoints(): Record<string, RenewalPointVM[]> {
     const groups: Record<string, RenewalPointVM[]> = {};
