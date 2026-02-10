@@ -1,11 +1,12 @@
 import { onMounted } from "vue";
 import { useAuthStore } from "@/stores/auth.store";
 import { useErrorHandle } from "./useErrorHandle";
-import type { FacebookUser } from "@/types";
 import { ERROR_MESSAGES } from "@/constants/errorMessages";
+import { FAKE_FACEBOOK_PROFILE } from "@/constants/auth";
 
 // Email is not allowed in development mode
 const scopes = ["public_profile"];
+const isFacebookFakeLogin = import.meta.env.VITE_FACEBOOK_FAKE_LOGIN === "true";
 
 export function useFacebookAuth() {
   const authStore = useAuthStore();
@@ -68,7 +69,12 @@ export function useFacebookAuth() {
     }
   }
 
+  function fakeLoginFacebook() {
+    if (!isFacebookFakeLogin) return;
+    authStore.setFacebookUser(FAKE_FACEBOOK_PROFILE);
+  }
+
   onMounted(initFacebook);
 
-  return { loginFacebook };
+  return { loginFacebook, fakeLoginFacebook };
 }
