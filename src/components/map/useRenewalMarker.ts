@@ -3,7 +3,7 @@ import L, { type Map, Marker, MarkerClusterGroup } from "leaflet";
 import "leaflet.markercluster";
 import { useLocationStore } from "@/stores/location.store";
 import { useErrorHandle } from "@/composables/useErrorHandle";
-import { POPUP_OPTIONS, MAP_FLY_TO_ZOOM } from "@/constants/map";
+import { POPUP_OPTIONS } from "@/constants/map";
 import { ERROR_MESSAGES } from "@/constants/errorMessages";
 import type { RenewalPointVM } from "@/types";
 
@@ -33,8 +33,6 @@ export function useRenewalMarker(mapRef: Ref<Map | null>, filterText?: Ref<strin
       await nextTick();
 
       if (markerClusterGroup.value) {
-        markerClusterGroup.value.off("popupopen");
-        markerClusterGroup.value.off("popupclose");
         markerClusterGroup.value.clearLayers();
       } else {
         markerClusterGroup.value = new MarkerClusterGroup();
@@ -94,7 +92,6 @@ export function useRenewalMarker(mapRef: Ref<Map | null>, filterText?: Ref<strin
 
   const setupMapEvents = () => {
     if (mapRef.value) {
-      mapRef.value.off("zoomstart", onZoom);
       mapRef.value.on("zoomstart", onZoom);
     }
   };
@@ -110,7 +107,6 @@ export function useRenewalMarker(mapRef: Ref<Map | null>, filterText?: Ref<strin
               .setLatLng(marker.getLatLng())
               .setContent(`<strong>${data.name}</strong><br/>距離: ${data.distance.toFixed(1)} km`)
               .openOn(mapRef.value!);
-            mapRef.value?.flyTo(marker.getLatLng(), MAP_FLY_TO_ZOOM);
           }
         });
       }
@@ -136,8 +132,6 @@ export function useRenewalMarker(mapRef: Ref<Map | null>, filterText?: Ref<strin
   onBeforeUnmount(() => {
     if (markerClusterGroup.value && mapRef.value) {
       mapRef.value.off("zoomstart", onZoom);
-      markerClusterGroup.value.off("popupopen");
-      markerClusterGroup.value.off("popupclose");
       markerClusterGroup.value.clearLayers();
       mapRef.value.removeLayer(markerClusterGroup.value as MarkerClusterGroup);
     }

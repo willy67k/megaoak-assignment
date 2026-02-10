@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, shallowRef } from "vue";
+import { onMounted, ref, shallowRef } from "vue";
 import { useLocationStore } from "@/stores/location.store";
 import BaseMap from "@/components/map/BaseMap.vue";
 import RenewalList from "@/components/list/RenewalList.vue";
@@ -8,7 +8,7 @@ import { ERROR_MESSAGES } from "@/constants/errorMessages";
 
 const store = useLocationStore();
 const mapRef = shallowRef<any>(null);
-const baseMapRef = shallowRef<InstanceType<typeof BaseMap> | null>(null);
+const baseMapRef = ref<InstanceType<typeof BaseMap> | null>(null);
 
 function handleMapRef(refVal: any) {
   mapRef.value = refVal;
