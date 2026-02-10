@@ -43,4 +43,4 @@ __screenshots__/
 
 # ENV
 .env*
-!.env
+!.env.example
