@@ -7,24 +7,62 @@ import { POPUP_OPTIONS } from "@/constants/map";
 import { ERROR_MESSAGES } from "@/constants/errorMessages";
 import type { RenewalPointVM } from "@/types";
 
+interface MarkerData {
+  name: string;
+  distance: number;
+}
+
+interface CustomMarker extends Marker {
+  data?: MarkerData;
+}
+
 export function useRenewalMarker(mapRef: Ref<Map | null>, filterText?: Ref<string>) {
   const store = useLocationStore();
   const markerClusterGroup = shallowRef<MarkerClusterGroup | null>(null);
   const { handleError } = useErrorHandle();
 
-  function getGroupedPoints(): Record<string, RenewalPointVM[]> {
-    const groups: Record<string, RenewalPointVM[]> = {};
-    const list = store.renewalPointVMs.filter((point) => (filterText?.value ? point.stopName.toLowerCase().includes(filterText.value.toLowerCase()) : true));
+  let markersMap: Record<string, CustomMarker> = {};
 
+  const getPopupContent = (data: MarkerData): string => {
+    return `<strong>${data.name}</strong><br/>距離: ${data.distance.toFixed(1)} km`;
+  };
+
+  const showPopup = (latlng: L.LatLngExpression, data: MarkerData) => {
+    if (!mapRef.value) return;
+    L.popup(POPUP_OPTIONS).setLatLng(latlng).setContent(getPopupContent(data)).openOn(mapRef.value);
+  };
+
+  const getGroupedPoints = (): Record<string, RenewalPointVM[]> => {
+    const searchTerm = filterText?.value?.toLowerCase() || "";
+    const list = searchTerm ? store.renewalPointVMs.filter((point) => point.stopName.toLowerCase().includes(searchTerm)) : store.renewalPointVMs;
+
+    const groups: Record<string, RenewalPointVM[]> = {};
     list.forEach((point) => {
       if (!groups[point.stopName]) groups[point.stopName] = [];
       groups[point.stopName]!.push(point);
     });
 
     return groups;
-  }
+  };
 
-  let markersMap: Record<string, Marker> = {};
+  const initMarkerClusterGroup = (): MarkerClusterGroup => {
+    if (markerClusterGroup.value) {
+      markerClusterGroup.value.clearLayers();
+      return markerClusterGroup.value;
+    }
+
+    const group = new MarkerClusterGroup();
+
+    group.on("click", (e) => {
+      const marker = e.layer as CustomMarker;
+      if (marker.data) {
+        showPopup(e.latlng, marker.data);
+      }
+    });
+
+    markerClusterGroup.value = group;
+    return group;
+  };
 
   async function render() {
     try {
@@ -32,27 +70,20 @@ export function useRenewalMarker(mapRef: Ref<Map | null>, filterText?: Ref<strin
 
       await nextTick();
 
-      if (markerClusterGroup.value) {
-        markerClusterGroup.value.clearLayers();
-      } else {
-        markerClusterGroup.value = new MarkerClusterGroup();
-        mapRef.value.addLayer(markerClusterGroup.value as MarkerClusterGroup);
-      }
-
+      const group = initMarkerClusterGroup();
       markersMap = {};
       const grouped = getGroupedPoints();
-      const markers: Marker[] = [];
+      const markers: CustomMarker[] = [];
 
       for (const name in grouped) {
         const points = grouped[name];
-        if (!points || points.length === 0) continue;
+        if (!points?.length) continue;
 
-        const { lat, lng } = points[0]!;
-        const marker = L.marker([lat, lng]);
-
-        (marker as any).data = {
+        const firstPoint = points[0]!;
+        const marker = L.marker([firstPoint.lat, firstPoint.lng]) as CustomMarker;
+        marker.data = {
           name,
-          distance: points[0]!.distance,
+          distance: firstPoint.distance,
         };
 
         markers.push(marker);
@@ -60,23 +91,12 @@ export function useRenewalMarker(mapRef: Ref<Map | null>, filterText?: Ref<strin
       }
 
       if (markers.length > 0) {
-        markerClusterGroup.value.addLayers(markers);
+        group.addLayers(markers);
       }
 
-      if (!mapRef.value.hasLayer(markerClusterGroup.value as MarkerClusterGroup)) {
-        mapRef.value.addLayer(markerClusterGroup.value as MarkerClusterGroup);
+      if (!mapRef.value.hasLayer(group)) {
+        mapRef.value.addLayer(group);
       }
-
-      markerClusterGroup.value.on("click", (e) => {
-        const marker = e.layer as any;
-        const data = marker.data;
-        if (data) {
-          L.popup(POPUP_OPTIONS)
-            .setLatLng(e.latlng)
-            .setContent(`<strong>${data.name}</strong><br/>距離: ${data.distance.toFixed(1)} km`)
-            .openOn(mapRef.value!);
-        }
-      });
     } catch (error) {
       handleError({
         level: "toast",
@@ -92,21 +112,18 @@ export function useRenewalMarker(mapRef: Ref<Map | null>, filterText?: Ref<strin
 
   const setupMapEvents = () => {
     if (mapRef.value) {
+      mapRef.value.off("zoomstart", onZoom);
       mapRef.value.on("zoomstart", onZoom);
     }
   };
 
   function openPopup(stopName: string) {
     try {
-      const marker = markersMap[stopName] as any;
+      const marker = markersMap[stopName];
       if (marker && markerClusterGroup.value) {
         markerClusterGroup.value.zoomToShowLayer(marker, () => {
-          const data = marker.data;
-          if (data) {
-            L.popup(POPUP_OPTIONS)
-              .setLatLng(marker.getLatLng())
-              .setContent(`<strong>${data.name}</strong><br/>距離: ${data.distance.toFixed(1)} km`)
-              .openOn(mapRef.value!);
+          if (marker.data) {
+            showPopup(marker.getLatLng(), marker.data);
           }
         });
       }
@@ -120,20 +137,22 @@ export function useRenewalMarker(mapRef: Ref<Map | null>, filterText?: Ref<strin
   }
 
   watch(
-    [() => store.renewalPointVMs.length, filterText],
+    [() => store.renewalPointVMs.length, filterText, mapRef],
     () => {
-      render().then(() => {
-        setupMapEvents();
-      });
+      if (mapRef.value) {
+        render().then(setupMapEvents);
+      }
     },
     { immediate: true }
   );
 
   onBeforeUnmount(() => {
-    if (markerClusterGroup.value && mapRef.value) {
+    if (mapRef.value) {
       mapRef.value.off("zoomstart", onZoom);
-      markerClusterGroup.value.clearLayers();
-      mapRef.value.removeLayer(markerClusterGroup.value as MarkerClusterGroup);
+      if (markerClusterGroup.value) {
+        markerClusterGroup.value.clearLayers();
+        mapRef.value.removeLayer(markerClusterGroup.value);
+      }
     }
   });
 
