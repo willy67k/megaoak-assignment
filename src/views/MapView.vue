@@ -21,8 +21,7 @@ onMounted(() => {
     async (pos) => {
       try {
         store.setUserLocation(pos.coords.latitude, pos.coords.longitude);
-        await store.fetchRenewalList();
-        await store.fetchPolygons();
+        await Promise.allSettled([store.fetchRenewalList(), store.fetchPolygons()]);
       } catch (error) {
         handleError({
           level: "toast",
