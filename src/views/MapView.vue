@@ -5,6 +5,7 @@ import BaseMap from "@/components/map/BaseMap.vue";
 import RenewalList from "@/components/list/RenewalList.vue";
 import { useErrorHandle } from "@/composables/useErrorHandle";
 import { ERROR_MESSAGES } from "@/constants/errorMessages";
+import { MAP_DEFAULT_CENTER } from "@/constants/map";
 
 const store = useLocationStore();
 const mapRef = shallowRef<any>(null);
@@ -16,26 +17,44 @@ function handleMapRef(refVal: any) {
 
 const { handleError } = useErrorHandle();
 
-onMounted(() => {
+onMounted(async () => {
+  try {
+    await Promise.allSettled([store.fetchRenewalList(), store.fetchPolygons()]);
+  } catch (error) {
+    handleError({
+      level: "toast",
+      message: ERROR_MESSAGES.API.FETCH_DATA_FAILED,
+      error,
+    });
+  }
+
+  if (!navigator.geolocation) {
+    handleError({
+      level: "toast",
+      message: ERROR_MESSAGES.MAP.USE_DEFAULT_POINT,
+    });
+
+    store.setUserLocation(MAP_DEFAULT_CENTER[0], MAP_DEFAULT_CENTER[1]);
+    return;
+  }
+
   navigator.geolocation.getCurrentPosition(
-    async (pos) => {
-      try {
-        store.setUserLocation(pos.coords.latitude, pos.coords.longitude);
-        await Promise.allSettled([store.fetchRenewalList(), store.fetchPolygons()]);
-      } catch (error) {
-        handleError({
-          level: "toast",
-          message: ERROR_MESSAGES.API.FETCH_DATA_FAILED,
-          error,
-        });
-      }
+    (pos) => {
+      store.setUserLocation(pos.coords.latitude, pos.coords.longitude);
     },
     (error) => {
       handleError({
         level: "toast",
-        message: ERROR_MESSAGES.MAP.LOCATION_GET_FAILED,
+        message: ERROR_MESSAGES.MAP.USE_DEFAULT_POINT,
         error,
       });
+
+      store.setUserLocation(MAP_DEFAULT_CENTER[0], MAP_DEFAULT_CENTER[1]);
+    },
+    {
+      enableHighAccuracy: false,
+      timeout: 8000,
+      maximumAge: 60000,
     }
   );
 });

@@ -1,6 +1,4 @@
-import type { LatLngExpression } from "leaflet";
-
-export const MAP_DEFAULT_CENTER: LatLngExpression = [25.02, 121.53];
+export const MAP_DEFAULT_CENTER: [number, number] = [25.02, 121.53];
 export const MAP_DEFAULT_ZOOM = 16;
 export const MAP_MAX_ZOOM = 18;
 export const MAP_FLY_TO_ZOOM = 18;

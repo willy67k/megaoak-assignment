@@ -7,6 +7,7 @@ export const ERROR_MESSAGES = {
     POPUP_OPEN_FAILED: "打開 popup 失敗",
     FLY_TO_FAILED: "無法飛往指定地點",
     LOCATION_GET_FAILED: "無法取得您的位置",
+    USE_DEFAULT_POINT: "無法取得您的位置，預設定位於OakMega",
   },
   AUTH: {
     GOOGLE_SDK_LOAD_FAILED: "Google SDK 載入失敗",
