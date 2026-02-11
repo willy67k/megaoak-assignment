@@ -17,7 +17,8 @@ function handleMapRef(refVal: any) {
 
 const { handleError } = useErrorHandle();
 
-onMounted(async () => {
+async function fetchMapData(lat: number, lng: number) {
+  store.setUserLocation(lat, lng);
   try {
     await Promise.allSettled([store.fetchRenewalList(), store.fetchPolygons()]);
   } catch (error) {
@@ -27,29 +28,31 @@ onMounted(async () => {
       error,
     });
   }
+}
 
+onMounted(async () => {
   if (!navigator.geolocation) {
     handleError({
       level: "toast",
       message: ERROR_MESSAGES.MAP.USE_DEFAULT_POINT,
     });
 
-    store.setUserLocation(MAP_DEFAULT_CENTER[0], MAP_DEFAULT_CENTER[1]);
+    await fetchMapData(MAP_DEFAULT_CENTER[0], MAP_DEFAULT_CENTER[1]);
     return;
   }
 
   navigator.geolocation.getCurrentPosition(
-    (pos) => {
-      store.setUserLocation(pos.coords.latitude, pos.coords.longitude);
+    async (pos) => {
+      await fetchMapData(pos.coords.latitude, pos.coords.longitude);
     },
-    (error) => {
+    async (error) => {
       handleError({
         level: "toast",
         message: ERROR_MESSAGES.MAP.USE_DEFAULT_POINT,
         error,
       });
 
-      store.setUserLocation(MAP_DEFAULT_CENTER[0], MAP_DEFAULT_CENTER[1]);
+      await fetchMapData(MAP_DEFAULT_CENTER[0], MAP_DEFAULT_CENTER[1]);
     },
     {
       enableHighAccuracy: false,
